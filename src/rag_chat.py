@@ -76,15 +76,15 @@ def get_query_embedding(text):
 # 5. Retrieve relevant chunks from ChromaDB
 # ─────────────────────────────────────────
 
-def retrieve_chunks(query, n_results=2):
+def retrieve_chunks(query, n_results=3):
     embedding = get_query_embedding(query)
     results = collection.query(
         query_embeddings=[embedding],
         n_results=n_results
     )
-    # results["documents"][0] is a list of matching chunks
     chunks = results["documents"][0]
-    return chunks
+    sources = [m.get("source", "unknown") for m in results["metadatas"][0]]
+    return chunks, sources
 
 
 # ─────────────────────────────────────────
@@ -145,8 +145,9 @@ def chat(user_message, conversation_history):
         return CRISIS_RESPONSE
 
     # Step 2 — Retrieve relevant chunks
-    chunks = retrieve_chunks(user_message)
-    print(f"📚 Retrieved {len(chunks)} chunks from ChromaDB")
+    chunks, sources = retrieve_chunks(user_message)
+    print(f"📚 Retrieved {len(chunks)} chunks")
+    print(f"📄 Sources: {set(sources)}")
 
     # Step 3 — Build the full prompt
     prompt = build_prompt(user_message, chunks, conversation_history)
