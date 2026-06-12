@@ -1,6 +1,16 @@
 venv/
 .env
+
 __pycache__/
 *.pyc
-.DS_Store
+*.pyo
+*.pyd
+
 chroma_db/
+
+.vscode/
+
+.DS_Store
+Thumbs.db
+
+*.log
