@@ -102,11 +102,28 @@ Assistant:"""
 # Response Generator
 
 def generate_response(prompt: str) -> str:
-    response = client_genai.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt
-    )
-    return response.text
+    import time
+    
+    max_retries = 3
+    retry_delay = 10
+    
+    for attempt in range(max_retries):
+        try:
+            response = client_genai.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt
+            )
+            return response.text
+        except Exception as e:
+            error_str = str(e)
+            if "503" in error_str or "UNAVAILABLE" in error_str:
+                if attempt < max_retries - 1:
+                    print(f"⏳ Gemini unavailable, retrying in {retry_delay}s... (attempt {attempt + 1}/{max_retries})")
+                    time.sleep(retry_delay)
+                else:
+                    raise Exception("Gemini is currently unavailable. Please try again in a moment.")
+            else:
+                raise e
 
 
 # Main Chat Function
@@ -125,7 +142,7 @@ def chat(user_message: str, conversation_history: list) -> dict:
 
     # Step 3 — Build prompt
     prompt = build_prompt(user_message, chunks, conversation_history)
-    
+
 
     # Step 4 — Generate response
     response = generate_response(prompt)
