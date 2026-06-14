@@ -2,7 +2,7 @@ import chromadb
 from google import genai
 from dotenv import load_dotenv
 import os
-
+from src.hybrid_search import hybrid_search
 load_dotenv()
 
 # Setup
@@ -60,13 +60,7 @@ def get_query_embedding(text: str):
 # Retrieval
 
 def retrieve_chunks(query: str, n_results: int = 3):
-    embedding = get_query_embedding(query)
-    results = collection.query(
-        query_embeddings=[embedding],
-        n_results=n_results
-    )
-    chunks = results["documents"][0]
-    sources = [m.get("source", "unknown") for m in results["metadatas"][0]]
+    chunks, sources, scores = hybrid_search(query, n_results=n_results)
     return chunks, sources
 
 
@@ -125,11 +119,41 @@ def generate_response(prompt: str) -> str:
             else:
                 raise e
 
+def rewrite_query(user_message: str, conversation_history: list) -> str:
+    """
+    If the query is vague (contains words like 'that', 'it', 'this', 'more'),
+    rewrite it using conversation history so ChromaDB can search meaningfully.
+    """
+    vague_words = ["that", "it", "this", "more", "elaborate", "explain further",
+                   "tell me more", "go on", "continue", "step by step"]
+
+    message_lower = user_message.lower()
+    is_vague = any(word in message_lower for word in vague_words)
+
+    if not is_vague or not conversation_history:
+        return user_message
+
+    # Build context from last 2 exchanges
+    recent = conversation_history[-4:]
+    history_text = ""
+    for turn in recent:
+        role = "User" if turn["role"] == "user" else "Assistant"
+        history_text += f"{role}: {turn['content'][:200]}\n"
+
+    rewrite_prompt = f"""Given this conversation:
+{history_text}
+
+The user now asks: "{user_message}"
+
+Rewrite the user's question as a clear, standalone search query that captures what they are asking about. Return only the rewritten query, nothing else."""
+
+    rewritten = generate_response(rewrite_prompt)
+    print(f"🔄 Query rewritten: '{user_message}' → '{rewritten.strip()}'")
+    return rewritten.strip()
 
 # Main Chat Function
 
 def chat(user_message: str, conversation_history: list) -> dict:
-    # Step 1 — Crisis check
     if is_crisis(user_message):
         return {
             "response": CRISIS_RESPONSE,
@@ -137,14 +161,12 @@ def chat(user_message: str, conversation_history: list) -> dict:
             "crisis_detected": True
         }
 
-    # Step 2 — Retrieve chunks
-    chunks, sources = retrieve_chunks(user_message)
+    # Rewrite vague queries using conversation history
+    search_query = rewrite_query(user_message, conversation_history)
 
-    # Step 3 — Build prompt
+    # Use rewritten query for retrieval, original message for response
+    chunks, sources = retrieve_chunks(search_query)
     prompt = build_prompt(user_message, chunks, conversation_history)
-
-
-    # Step 4 — Generate response
     response = generate_response(prompt)
 
     return {
