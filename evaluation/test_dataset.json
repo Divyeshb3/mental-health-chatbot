@@ -1,0 +1,42 @@
+[
+  {
+    "question": "What are the symptoms of anxiety?",
+    "ground_truth": "Anxiety symptoms include racing heart, sweating, trembling, difficulty concentrating, feelings of worry and nervousness, and physical tension."
+  },
+  {
+    "question": "How does deep breathing help with anxiety?",
+    "ground_truth": "Deep breathing activates the parasympathetic nervous system which calms the body down and reduces anxiety symptoms."
+  },
+  {
+    "question": "What is the STOPP technique?",
+    "ground_truth": "STOPP stands for Stop, Take a breath, Observe, Pull back, and Practise. It is a CBT technique to pause and respond mindfully instead of reacting automatically to anxious thoughts."
+  },
+  {
+    "question": "What is mindfulness?",
+    "ground_truth": "Mindfulness is the practice of being present in the current moment. It helps reduce anxiety and stress by training the mind to focus on the present rather than worrying about future events."
+  },
+  {
+    "question": "What are safety behaviours in CBT?",
+    "ground_truth": "Safety behaviours are things people do to cope with anxiety that provide short term relief but prevent them from learning that their anxiety would reduce on its own without these behaviours."
+  },
+  {
+    "question": "What are the symptoms of depression?",
+    "ground_truth": "Depression symptoms include persistent sadness, loss of interest in activities, low energy, difficulty concentrating, changes in sleep and appetite, and feelings of worthlessness."
+  },
+  {
+    "question": "How does gradual exposure work?",
+    "ground_truth": "Gradual exposure involves slowly and systematically facing feared situations starting with less anxiety provoking ones and building up gradually so the person learns their anxiety reduces over time."
+  },
+  {
+    "question": "What is cognitive behavioural therapy?",
+    "ground_truth": "Cognitive behavioural therapy or CBT is a psychological treatment that helps people identify and change unhelpful thought patterns and behaviours that contribute to mental health problems like anxiety and depression."
+  },
+  {
+    "question": "How can mindfulness help with depression?",
+    "ground_truth": "Mindfulness helps with depression by developing awareness of negative thought patterns, training the mind to stay present rather than ruminating, and cultivating self compassion toward difficult emotions."
+  },
+  {
+    "question": "What is behavioural activation?",
+    "ground_truth": "Behavioural activation is a CBT technique for depression that involves scheduling and engaging in meaningful activities to improve mood and break the cycle of withdrawal and low mood."
+  }
+]
