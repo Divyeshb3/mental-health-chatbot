@@ -18,23 +18,35 @@ def load_pdf(file_path):
 
 
 def load_all_pdfs(data_folder="data"):
-    """Load all PDFs from the data folder"""
+    """Load all PDFs and TXT files from the data folder"""
     all_texts = {}
-    
-    pdf_files = [f for f in os.listdir(data_folder) if f.endswith(".pdf")]
-    
-    if not pdf_files:
-        print("❌ No PDF files found in data/ folder")
+
+    # Get all PDF and TXT files
+    all_files = [
+        f for f in os.listdir(data_folder)
+        if f.endswith(".pdf") or f.endswith(".txt")
+    ]
+
+    if not all_files:
+        print("❌ No files found in data/ folder")
         return {}
-    
-    print(f"📁 Found {len(pdf_files)} PDF file(s):\n")
-    
-    for pdf_file in pdf_files:
-        file_path = os.path.join(data_folder, pdf_file)
-        text = load_pdf(file_path)
-        all_texts[pdf_file] = text
+
+    print(f"📁 Found {len(all_files)} file(s):\n")
+
+    for filename in all_files:
+        file_path = os.path.join(data_folder, filename)
+
+        if filename.endswith(".pdf"):
+            text = load_pdf(file_path)
+        else:
+            # Load txt file directly
+            with open(file_path, "r", encoding="utf-8") as f:
+                text = f.read()
+            print(f"  📄 {filename} — text file")
+
+        all_texts[filename] = text
         print(f"  ✅ Loaded: {len(text)} characters extracted\n")
-    
+
     return all_texts
 
 
