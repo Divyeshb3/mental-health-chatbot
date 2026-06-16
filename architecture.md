@@ -1,0 +1,147 @@
+# System Architecture
+
+## RAG Pipeline Flow
+User Message
+
+│
+
+▼
+
+┌─────────────────┐
+
+│ Crisis Detection │  ──── Crisis? ──► Return Helpline Immediately
+
+└─────────────────┘
+
+│ No Crisis
+
+▼
+
+┌─────────────────┐
+
+│  Query Rewriter  │  ──── Vague followup? ──► Rewrite using history
+
+└─────────────────┘
+
+│
+
+▼
+
+┌─────────────────┐
+
+│  Hybrid Search   │  ──── Semantic (70%) + BM25 Keyword (30%)
+
+└─────────────────┘
+
+│
+
+▼
+
+┌─────────────────┐
+
+│   ChromaDB       │  ──── Returns top 3 chunks + source filenames
+
+└─────────────────┘
+
+│
+
+▼
+
+┌─────────────────┐
+
+│  Prompt Builder  │  ──── System prompt + History + Context + Question
+
+└─────────────────┘
+
+│
+
+▼
+
+┌─────────────────┐
+
+│  Gemini 2.5 Flash│  ──── Generates empathetic response
+
+└─────────────────┘
+
+│
+
+▼
+
+┌─────────────────┐
+
+│    Response      │  ──── Answer + Sources + crisis_detected flag
+
+└─────────────────┘
+
+## Data Pipeline Flow
+PDF / TXT Files (7 documents)
+
+│
+
+▼
+
+┌─────────────────┐
+
+│   PDF Loader     │  ──── pdfplumber extracts raw text
+
+└─────────────────┘
+
+│
+
+▼
+
+┌─────────────────┐
+
+│  Text Chunker    │  ──── 400 words per chunk, 50 word overlap
+
+└─────────────────┘
+
+│
+
+▼
+
+┌─────────────────┐
+
+│ Gemini Embeddings│  ──── models/gemini-embedding-001
+
+└─────────────────┘
+
+│
+
+▼
+
+┌─────────────────┐
+
+│    ChromaDB      │  ──── Persistent local vector store
+
+└─────────────────┘
+
+## API Flow
+Frontend (React)
+
+│
+
+▼ POST /chat
+
+┌─────────────────┐
+
+│   FastAPI        │  ──── Pydantic validation, rate limiting, logging
+
+└─────────────────┘
+
+│
+
+▼
+
+┌─────────────────┐
+
+│  RAG Pipeline    │  ──── rag_pipeline.py
+
+└─────────────────┘
+
+│
+
+▼
+
+JSON Response: { response, sources, crisis_detected }
+
