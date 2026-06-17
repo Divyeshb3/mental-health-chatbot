@@ -11,6 +11,18 @@ import logging
 import time
 from src.rag_pipeline import chat
 
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Run on startup
+    print("🚀 Starting MindCare AI backend...")
+    from src.startup import build_knowledge_base
+    build_knowledge_base()
+    yield
+    # Run on shutdown
+    print("👋 Shutting down...")
+
 # Logging Setup
 
 logging.basicConfig(
@@ -29,6 +41,7 @@ app = FastAPI(
     title="Mental Health Support Chatbot API",
     description="RAG-based mental health support chatbot",
     version="1.0.0"
+    lifespan=lifespan
 )
 
 app.state.limiter = limiter
@@ -144,4 +157,9 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(
+        "src.main:app",
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", 8000)),
+        reload=False
+    )
