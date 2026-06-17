@@ -40,7 +40,7 @@ limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(
     title="Mental Health Support Chatbot API",
     description="RAG-based mental health support chatbot",
-    version="1.0.0"
+    version="1.0.0",
     lifespan=lifespan
 )
 
