@@ -15,12 +15,9 @@ from contextlib import asynccontextmanager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Run on startup
-    print("🚀 Starting MindCare AI backend...")
-    from src.startup import build_knowledge_base
-    build_knowledge_base()
+    print("🚀 MindCare AI backend starting...")
+    print("✅ Using pre-built knowledge base from chroma_db/")
     yield
-    # Run on shutdown
     print("👋 Shutting down...")
 
 # Logging Setup

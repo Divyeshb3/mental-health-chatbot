@@ -6,7 +6,6 @@ __pycache__/
 *.pyo
 *.pyd
 
-chroma_db/
 
 .vscode/
 
