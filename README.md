@@ -6,6 +6,12 @@ A RAG-based mental health support chatbot built with Gemini 2.5 Flash, ChromaDB,
 
 ---
 
+## 🌐 Live Demo
+
+- **Frontend:** https://mental-health-chatbot-sooty.vercel.app
+- **Backend API:** https://mindcare-ai-backend-4wgx.onrender.com
+- **API Docs:** https://mindcare-ai-backend-4wgx.onrender.com/docs
+
 ## 📊 Evaluation Scores
 
 Evaluated using a Groq LLaMA 3.3 70B judge across 10 standardized mental health questions:
@@ -34,7 +40,7 @@ See [architecture.md](./architecture.md) for detailed flow diagrams.
 
 ## ✨ Features
 
-- **RAG Pipeline** — answers grounded in 7 clinical PDFs, 200+ document chunks
+- **RAG Pipeline** — answers grounded in 8 clinical PDFs, 330+ document chunksdocument chunks
 - **Hybrid Search** — combines semantic similarity (70%) and BM25 keyword search (30%)
 - **Crisis Detection** — intercepts harmful messages and returns emergency helplines before RAG runs
 - **Query Rewriting** — rewrites vague follow-up questions using conversation history for better retrieval
