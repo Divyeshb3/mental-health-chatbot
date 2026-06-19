@@ -3,6 +3,7 @@ from google import genai
 from dotenv import load_dotenv
 import os
 from src.hybrid_search import hybrid_search
+
 load_dotenv()
 
 # Setup
@@ -22,8 +23,8 @@ Rules you must always follow:
 3. Never diagnose any mental health condition
 4. Always remind the user you are not a substitute for professional help
 5. Keep responses warm, clear, and easy to understand
-6. If no context is relevant, say "I don't have specific information on that,
-   but I encourage you to speak with a mental health professional."
+6. If no context is relevant, say "I don't have specific information on that, but I encourage you to speak with a mental health professional."
+7. Do not refer to named characters or case studies from documents — paraphrase the information instead.
 
 You are NOT a therapist. You are a supportive guide."""
 
@@ -63,7 +64,6 @@ def retrieve_chunks(query: str, n_results: int = 3):
     chunks, sources, scores = hybrid_search(query, n_results=n_results)
     return chunks, sources
 
-
 # Prompt Builder
 
 def build_prompt(user_message: str, chunks: list, conversation_history: list) -> str:
@@ -97,10 +97,10 @@ Assistant:"""
 
 def generate_response(prompt: str) -> str:
     import time
-    
+
     max_retries = 3
     retry_delay = 10
-    
+
     for attempt in range(max_retries):
         try:
             response = client_genai.models.generate_content(
@@ -119,11 +119,9 @@ def generate_response(prompt: str) -> str:
             else:
                 raise e
 
+# Query Rewriter
+
 def rewrite_query(user_message: str, conversation_history: list) -> str:
-    """
-    If the query is vague (contains words like 'that', 'it', 'this', 'more'),
-    rewrite it using conversation history so ChromaDB can search meaningfully.
-    """
     vague_words = ["that", "it", "this", "more", "elaborate", "explain further",
                    "tell me more", "go on", "continue", "step by step"]
 
@@ -133,7 +131,6 @@ def rewrite_query(user_message: str, conversation_history: list) -> str:
     if not is_vague or not conversation_history:
         return user_message
 
-    # Build context from last 2 exchanges
     recent = conversation_history[-4:]
     history_text = ""
     for turn in recent:
@@ -161,10 +158,7 @@ def chat(user_message: str, conversation_history: list) -> dict:
             "crisis_detected": True
         }
 
-    # Rewrite vague queries using conversation history
     search_query = rewrite_query(user_message, conversation_history)
-
-    # Use rewritten query for retrieval, original message for response
     chunks, sources = retrieve_chunks(search_query)
     prompt = build_prompt(user_message, chunks, conversation_history)
     response = generate_response(prompt)
