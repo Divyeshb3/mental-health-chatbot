@@ -8,7 +8,7 @@ import { MessageBubble } from "@/components/message-bubble"
 import { TypingIndicator } from "@/components/typing-indicator"
 import { ChatInput } from "@/components/chat-input"
 
-const API_URL = "http://127.0.0.1:8000/chat"
+const API_URL = "https://mindcare-ai-backend-4wgx.onrender.com/chat"
 
 const SUGGESTIONS = [
   "I've been feeling anxious lately",
