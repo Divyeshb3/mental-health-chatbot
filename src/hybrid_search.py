@@ -40,7 +40,7 @@ def get_query_embedding(text):
 # Hybrid Search
 
 
-def hybrid_search(query, n_results=3, semantic_weight=0.7, keyword_weight=0.3):
+def hybrid_search(query, n_results=5, semantic_weight=0.7, keyword_weight=0.3):
     """
     Combines semantic search (ChromaDB) and keyword search (BM25)
     
@@ -119,7 +119,7 @@ if __name__ == "__main__":
         print("=" * 55)
         print(f"Query: {query}")
         print("=" * 55)
-        chunks, sources, scores = hybrid_search(query, n_results=3)
+        chunks, sources, scores = hybrid_search(query, n_results=5)
         for i, (chunk, source, score) in enumerate(zip(chunks, sources, scores)):
             print(f"\nResult {i+1} | Score: {score} | Source: {source}")
             print(f"Preview: {chunk[:120]}...")

@@ -60,7 +60,7 @@ def get_query_embedding(text: str):
 
 # Retrieval
 
-def retrieve_chunks(query: str, n_results: int = 3):
+def retrieve_chunks(query: str, n_results: int = 5):
     chunks, sources, scores = hybrid_search(query, n_results=n_results)
     return chunks, sources
 
