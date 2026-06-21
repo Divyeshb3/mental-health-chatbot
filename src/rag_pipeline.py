@@ -3,6 +3,7 @@ from google import genai
 from dotenv import load_dotenv
 import os
 from src.hybrid_search import hybrid_search
+from src.reranker import rerank_chunks
 
 load_dotenv()
 
@@ -61,7 +62,12 @@ def get_query_embedding(text: str):
 # Retrieval
 
 def retrieve_chunks(query: str, n_results: int = 5):
-    chunks, sources, scores = hybrid_search(query, n_results=n_results)
+    # Step 1 — Get 10 candidates from hybrid search
+    chunks, sources, scores = hybrid_search(query, n_results=10)
+    
+    # Step 2 — Re-rank and keep top 5
+    chunks, sources = rerank_chunks(query, chunks, sources, top_n=n_results)
+    
     return chunks, sources
 
 # Prompt Builder

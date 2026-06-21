@@ -40,7 +40,7 @@ def get_query_embedding(text):
 # Hybrid Search
 
 
-def hybrid_search(query, n_results=5, semantic_weight=0.7, keyword_weight=0.3):
+def hybrid_search(query, n_results=10, semantic_weight=0.7, keyword_weight=0.3):
     """
     Combines semantic search (ChromaDB) and keyword search (BM25)
     
