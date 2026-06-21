@@ -62,11 +62,17 @@ def get_query_embedding(text: str):
 # Retrieval
 
 def retrieve_chunks(query: str, n_results: int = 5):
-    # Step 1 — Get 10 candidates from hybrid search
+    # Get candidates from hybrid search
     chunks, sources, scores = hybrid_search(query, n_results=10)
     
-    # Step 2 — Re-rank and keep top 5
-    chunks, sources = rerank_chunks(query, chunks, sources, top_n=n_results)
+    # Use re-ranking only if available (not on production due to memory limits)
+    try:
+        from src.reranker import rerank_chunks
+        chunks, sources = rerank_chunks(query, chunks, sources, top_n=n_results)
+    except Exception as e:
+        print(f"⚠️ Re-ranker not available, using hybrid search results: {e}")
+        chunks = chunks[:n_results]
+        sources = sources[:n_results]
     
     return chunks, sources
 
