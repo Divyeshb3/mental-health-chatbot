@@ -6,6 +6,10 @@ from typing import List
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from fastapi.responses import StreamingResponse
+import json
+from google import genai
+import os
 import uvicorn
 import logging
 import time
@@ -147,6 +151,83 @@ async def chat_endpoint(request: Request, body: ChatRequest):
             detail="Something went wrong. Please try again in a moment."
         )
 
+@app.post("/chat/stream")
+@limiter.limit("10/minute")
+async def chat_stream_endpoint(request: Request, body: ChatRequest):
+    """Streaming version of chat endpoint"""
+    
+    async def generate():
+        try:
+            history = [
+                {"role": msg.role, "content": msg.content}
+                for msg in body.conversation_history
+            ]
+
+            # Crisis check first
+            from src.rag_pipeline import is_crisis, CRISIS_RESPONSE
+            if is_crisis(body.message):
+                data = json.dumps({
+                    "type": "crisis",
+                    "content": CRISIS_RESPONSE,
+                    "sources": [],
+                    "crisis_detected": True
+                })
+                yield f"data: {data}\n\n"
+                return
+
+            # Get sources and rewritten query
+            from src.rag_pipeline import rewrite_query, retrieve_chunks, build_prompt
+            search_query = rewrite_query(body.message, history)
+            chunks, sources = retrieve_chunks(search_query)
+            prompt = build_prompt(body.message, chunks, history)
+
+            # Stream from Gemini
+            from google import genai
+            import os
+            client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
+            # Send sources first
+            sources_data = json.dumps({
+                "type": "sources",
+                "sources": list(set(sources)),
+                "crisis_detected": False
+            })
+            yield f"data: {sources_data}\n\n"
+
+            # Stream tokens
+            response = client.models.generate_content_stream(
+                model="gemini-2.5-flash",
+                contents=prompt
+            )
+
+            for chunk in response:
+                if chunk.text:
+                    token_data = json.dumps({
+                        "type": "token",
+                        "content": chunk.text
+                    })
+                    yield f"data: {token_data}\n\n"
+
+            # Send done signal
+            yield f"data: {json.dumps({'type': 'done'})}\n\n"
+
+        except Exception as e:
+            error_data = json.dumps({
+                "type": "error",
+                "content": "Something went wrong. Please try again."
+            })
+            yield f"data: {error_data}\n\n"
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Access-Control-Allow-Origin": "*"
+        }
+    )
+    
 # Global Exception Handler
 
 @app.exception_handler(Exception)
