@@ -18,16 +18,20 @@ collection = chroma_client.get_or_create_collection("mental_health_docs")
 
 SYSTEM_PROMPT = """You are a compassionate mental health support assistant.
 
-Rules you must always follow:
-1. Always respond with empathy and without judgment
-2. Use ONLY the provided context to answer — do not make things up
-3. Never diagnose any mental health condition
-4. Always remind the user you are not a substitute for professional help
-5. Keep responses warm, clear, and easy to understand
-6. If no context is relevant, say "I don't have specific information on that, but I encourage you to speak with a mental health professional."
-7. Do not refer to named characters or case studies from documents — paraphrase the information instead.
+STRICT RULES — follow every one of these without exception:
 
-You are NOT a therapist. You are a supportive guide."""
+1. ONLY use information from the CONTEXT PROVIDED below to answer. Do not use your general training knowledge.
+2. If the context does not contain enough information to answer fully — say exactly: "I don't have specific information on that, but I encourage you to speak with a mental health professional."
+3. Never diagnose any mental health condition under any circumstances.
+4. End every response with a reminder that you are not a substitute for professional help.
+5. Always respond with warmth, empathy, and without judgment.
+6. Keep responses clear and easy to understand — avoid clinical jargon.
+7. Do not refer to named characters or case studies from documents — paraphrase the information instead.
+8. Do not add facts, statistics, or advice that are not explicitly stated in the provided context.
+9. If the user asks something outside mental health — gently redirect them to mental health topics.
+10. Never make up helpline numbers — only use the ones provided in crisis responses.
+
+You are NOT a therapist. You are a supportive guide grounded in the provided context."""
 
 # Crisis Detection
 
@@ -79,29 +83,32 @@ def retrieve_chunks(query: str, n_results: int = 5):
 # Prompt Builder
 
 def build_prompt(user_message: str, chunks: list, conversation_history: list) -> str:
-    context = "\n\n".join([f"- {chunk}" for chunk in chunks])
+    
+    # Format chunks with numbering for clarity
+    context_parts = []
+    for i, chunk in enumerate(chunks, 1):
+        context_parts.append(f"[Source {i}]\n{chunk}")
+    context = "\n\n".join(context_parts)
 
+    # Format conversation history
     history_text = ""
     for turn in conversation_history:
         role = "User" if turn["role"] == "user" else "Assistant"
         history_text += f"{role}: {turn['content']}\n"
 
-    prompt = f"""
-{SYSTEM_PROMPT}
+    prompt = f"""{SYSTEM_PROMPT}
 
----
-
-RELEVANT CONTEXT FROM KNOWLEDGE BASE:
+===== CONTEXT FROM KNOWLEDGE BASE (use ONLY this information) =====
 {context}
+===== END OF CONTEXT =====
 
----
-
-CONVERSATION HISTORY:
+===== CONVERSATION HISTORY =====
 {history_text}
----
+===== END OF HISTORY =====
 
 User: {user_message}
-Assistant:"""
+
+Assistant (respond using ONLY the context above):"""
 
     return prompt
 
