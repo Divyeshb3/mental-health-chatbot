@@ -8,7 +8,7 @@ import { MessageBubble } from "@/components/message-bubble"
 import { TypingIndicator } from "@/components/typing-indicator"
 import { ChatInput } from "@/components/chat-input"
 
-const API_URL = "https://mindcare-ai-backend-4wgx.onrender.com/chat"
+const API_URL = "http://127.0.0.1:8000"
 
 const SUGGESTIONS = [
   "I've been feeling anxious lately",
@@ -45,7 +45,6 @@ export function Chat() {
       content: trimmed,
     }
 
-    // Build history from the current messages (before adding the new one).
     const conversationHistory = messages.map((m) => ({
       role: m.role,
       content: m.content,
@@ -55,7 +54,7 @@ export function Chat() {
     setIsLoading(true)
 
     try {
-      const res = await fetch(API_URL, {
+      const res = await fetch(`${API_URL}/chat/stream`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -68,21 +67,77 @@ export function Chat() {
         throw new Error(`Request failed with status ${res.status}`)
       }
 
-      const data: ChatApiResponse = await res.json()
+      const reader = res.body!.getReader()
+      const decoder = new TextDecoder()
+      let fullContent = ""
+      let sources: string[] = []
+      let crisisDetected = false
+      const botId = createId()
 
-      const botMessage: ChatMessage = {
-        id: createId(),
-        role: "assistant",
-        content: data.response,
-        sources: data.sources,
-        crisisDetected: data.crisis_detected,
+      // Add empty bot message immediately
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: botId,
+          role: "assistant",
+          content: "",
+          sources: [],
+          crisisDetected: false,
+        },
+      ])
+
+      setIsLoading(false)
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const text = decoder.decode(value)
+        const lines = text.split("\n").filter((line) => line.startsWith("data: "))
+
+        for (const line of lines) {
+          try {
+            const data = JSON.parse(line.replace("data: ", ""))
+
+            if (data.type === "sources") {
+              sources = data.sources
+              crisisDetected = data.crisis_detected
+            }
+
+            if (data.type === "crisis") {
+              fullContent = data.content
+              crisisDetected = true
+              sources = []
+            }
+
+            if (data.type === "token") {
+              fullContent += data.content
+            }
+
+            if (data.type === "token" || data.type === "crisis") {
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === botId
+                    ? {
+                        ...m,
+                        content: fullContent,
+                        sources: sources,
+                        crisisDetected: crisisDetected,
+                      }
+                    : m
+                )
+              )
+            }
+
+          } catch {
+            // skip malformed lines
+          }
+        }
       }
 
-      setMessages((prev) => [...prev, botMessage])
     } catch (err) {
-      console.log("[v0] chat request failed:", err)
+      console.log("[v0] chat stream failed:", err)
       setError("Couldn't reach the support service. Please check your connection and try again.")
-    } finally {
       setIsLoading(false)
     }
   }
