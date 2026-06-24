@@ -3,7 +3,7 @@ from google import genai
 from dotenv import load_dotenv
 import os
 from src.hybrid_search import hybrid_search
-from src.reranker import rerank_chunks
+
 
 load_dotenv()
 
