@@ -7,6 +7,8 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from fastapi.responses import StreamingResponse
+# MindCare AI Backend v2.0 - with streaming
+from fastapi import FastAPI, HTTPException, Request
 import json
 from google import genai
 import os
