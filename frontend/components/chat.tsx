@@ -134,7 +134,7 @@ export function Chat() {
           }
         }
       }
-
+    
     } catch (err) {
       console.log("[v0] chat stream failed:", err)
       setError("Couldn't reach the support service. Please check your connection and try again.")
