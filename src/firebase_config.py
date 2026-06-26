@@ -1,14 +1,17 @@
 import firebase_admin
 from firebase_admin import credentials, firestore
 import os
+import json
 
-# Path to your Firebase service account key
-KEY_PATH = "firebase_key.json"
-
-# Initialize Firebase only once
 if not firebase_admin._apps:
-    cred = credentials.Certificate(KEY_PATH)
+    if os.getenv("FIREBASE_CREDENTIALS"):
+        # Running on Render
+        cred_dict = json.loads(os.environ["FIREBASE_CREDENTIALS"])
+        cred = credentials.Certificate(cred_dict)
+    else:
+        # Running locally
+        cred = credentials.Certificate("firebase_key.json")
+
     firebase_admin.initialize_app(cred)
 
-# Firestore client
 db = firestore.client()
