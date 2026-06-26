@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { Sparkles } from "lucide-react"
-import type { ChatApiResponse, ChatMessage } from "@/lib/types"
+import type {ChatMessage } from "@/lib/types"
 import { DisclaimerBanner } from "@/components/disclaimer-banner"
 import { MessageBubble } from "@/components/message-bubble"
 import { TypingIndicator } from "@/components/typing-indicator"
@@ -86,13 +86,13 @@ export function Chat() {
         },
       ])
 
-      setIsLoading(false)
+      
 
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
 
-        const text = decoder.decode(value)
+        const text = decoder.decode(value, { stream: true })
         const lines = text.split("\n").filter((line) => line.startsWith("data: "))
 
         for (const line of lines) {
@@ -134,7 +134,8 @@ export function Chat() {
           }
         }
       }
-    
+    setIsLoading(false)
+
     } catch (err) {
       console.log("[v0] chat stream failed:", err)
       setError("Couldn't reach the support service. Please check your connection and try again.")
