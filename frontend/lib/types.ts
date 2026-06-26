@@ -6,6 +6,7 @@ export interface ChatMessage {
   content: string
   sources?: string[]
   crisisDetected?: boolean
+  feedback?: "positive" | "negative"
 }
 
 // Shape sent to / received from the backend API.

@@ -15,3 +15,5 @@ Thumbs.db
 *.log
 
 evaluation/results.json
+
+firebase_key.json

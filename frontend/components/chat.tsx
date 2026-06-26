@@ -8,7 +8,7 @@ import { MessageBubble } from "@/components/message-bubble"
 import { TypingIndicator } from "@/components/typing-indicator"
 import { ChatInput } from "@/components/chat-input"
 
-const API_URL = "https://mindcare-ai-backend-4wgx.onrender.com"
+const API_URL = "const API_URL = https://mindcare-ai-backend-4wgx.onrender.com"
 
 const SUGGESTIONS = [
   "I've been feeling anxious lately",
@@ -32,6 +32,51 @@ export function Chat() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" })
   }, [messages, isLoading])
 
+  async function handleFeedback(
+  message: ChatMessage,
+  rating: "positive" | "negative"
+) {
+  try {
+    const assistantIndex = messages.findIndex((m) => m.id === message.id)
+
+    if (assistantIndex <= 0) return
+
+    const question = messages[assistantIndex - 1].content
+
+    const res = await fetch(`${API_URL}/feedback`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    question,
+    response: message.content,
+    rating,
+    sources: message.sources ?? [],
+  }),
+})
+
+if (!res.ok) {
+  throw new Error(`Feedback failed: ${res.status}`)
+}
+
+setMessages((prev) =>
+  prev.map((m) =>
+    m.id === message.id
+      ? {
+          ...m,
+          feedback: rating,
+        }
+      : m
+  )
+)
+
+console.log("Feedback submitted")
+
+  } catch (err) {
+    console.error("Failed to submit feedback:", err)
+  }
+}
   async function sendMessage(text: string) {
     const trimmed = text.trim()
     if (!trimmed || isLoading) return
@@ -194,7 +239,7 @@ export function Chat() {
               </div>
             </div>
           ) : (
-            messages.map((message) => <MessageBubble key={message.id} message={message} />)
+            messages.map((message) => <MessageBubble key={message.id} message={message} onFeedback={handleFeedback} />)
           )}
 
           {isLoading ? (

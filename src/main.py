@@ -9,6 +9,7 @@ from slowapi.errors import RateLimitExceeded
 from fastapi.responses import StreamingResponse
 # MindCare AI Backend v2.0 - with streaming
 from fastapi import FastAPI, HTTPException, Request
+from src.feedback import FeedbackRequest, save_feedback
 import json
 from google import genai
 import os
@@ -229,7 +230,20 @@ async def chat_stream_endpoint(request: Request, body: ChatRequest):
             "Access-Control-Allow-Origin": "*"
         }
     )
-    
+
+@app.post("/feedback", tags=["Feedback"])
+async def feedback_endpoint(feedback: FeedbackRequest):
+    try:
+        save_feedback(feedback)
+        return {
+            "success": True,
+            "message": "Feedback saved successfully."
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to save feedback: {str(e)}"
+        )   
 # Global Exception Handler
 
 @app.exception_handler(Exception)
