@@ -3,15 +3,25 @@ from firebase_admin import credentials, firestore
 import os
 import json
 
-if not firebase_admin._apps:
-    if os.getenv("FIREBASE_CREDENTIALS"):
-        # Running on Render
-        cred_dict = json.loads(os.environ["FIREBASE_CREDENTIALS"])
-        cred = credentials.Certificate(cred_dict)
-    else:
-        # Running locally
-        cred = credentials.Certificate("firebase_key.json")
+def initialize_firebase():
+    """Initialize Firebase Admin SDK"""
+    if firebase_admin._apps:
+        return firestore.client()
 
-    firebase_admin.initialize_app(cred)
+    try:
+        creds_json = os.getenv("FIREBASE_CREDENTIALS")
 
-db = firestore.client()
+        if creds_json:
+            creds_dict = json.loads(creds_json)
+            cred = credentials.Certificate(creds_dict)
+        else:
+            cred = credentials.Certificate("firebase-credentials.json")
+
+        firebase_admin.initialize_app(cred)
+        print("✅ Firebase initialized successfully")
+        return firestore.client()
+
+    except Exception as e:
+        raise RuntimeError(f"Firebase initialization failed: {e}")
+
+db = initialize_firebase()
