@@ -7,6 +7,7 @@ import { DisclaimerBanner } from "@/components/disclaimer-banner"
 import { MessageBubble } from "@/components/message-bubble"
 import { TypingIndicator } from "@/components/typing-indicator"
 import { ChatInput } from "@/components/chat-input"
+import { MoodPicker } from "@/components/mood-picker"
 
 const API_URL = "https://mindcare-ai-backend-4wgx.onrender.com"
 
@@ -25,6 +26,9 @@ export function Chat() {
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const [moodSubmitted, setMoodSubmitted] = useState(false)
+  const [sessionId] = useState(() => Math.random().toString(36).slice(2))
 
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -75,6 +79,30 @@ console.log("Feedback submitted")
 
   } catch (err) {
     console.error("Failed to submit feedback:", err)
+  }
+}
+async function handleMoodSelected(score: number, label: string) {
+
+  try {
+    const res = await fetch(`${API_URL}/mood`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        mood_score: score,
+        mood_label: label,
+        session_id: sessionId,
+      }),
+    })
+
+    if (!res.ok) {
+      throw new Error(`Mood save failed: ${res.status}`)
+    }
+    setMoodSubmitted(true)
+    console.log("Mood saved:", score, label)
+  } catch (err) {
+    console.error("Mood save failed:", err)
   }
 }
   async function sendMessage(text: string) {
@@ -214,33 +242,45 @@ console.log("Feedback submitted")
         <div className="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-6">
           {isEmpty ? (
             <div className="flex flex-col items-center gap-5 py-10 text-center">
-              <div className="flex size-14 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent">
-                <Sparkles className="size-6 text-primary-foreground" aria-hidden="true" />
-              </div>
-              <div className="space-y-1.5">
-                <h2 className="text-balance text-lg font-semibold text-foreground">
-                  How are you feeling today?
-                </h2>
-                <p className="text-pretty text-sm text-muted-foreground">
-                  Share whatever is on your mind. I&apos;m here to listen and support you.
-                </p>
-              </div>
-              <div className="flex flex-wrap justify-center gap-2">
-                {SUGGESTIONS.map((suggestion) => (
-                  <button
-                    key={suggestion}
-                    type="button"
-                    onClick={() => sendMessage(suggestion)}
-                    className="rounded-full border border-border bg-card px-3.5 py-1.5 text-xs text-foreground transition-colors hover:border-primary/60 hover:bg-secondary"
-                  >
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <div className="flex size-14 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent">
+            <Sparkles className="size-6 text-primary-foreground" aria-hidden="true" />
+          </div>
+        <div className="space-y-1.5">
+          <h2 className="text-balance text-lg font-semibold text-foreground">
+            How are you feeling today?
+          </h2>
+          <p className="text-pretty text-sm text-muted-foreground">
+            Share whatever is on your mind. I&apos;m here to listen and support you.
+          </p>
+        </div>
+
+        {/* Mood Picker */}
+        {!moodSubmitted ? (
+        <MoodPicker onMoodSelected={handleMoodSelected} />
           ) : (
-            messages.map((message) => <MessageBubble key={message.id} message={message} onFeedback={handleFeedback} />)
-          )}
+          <p className="text-xs text-muted-foreground">
+            Feel free to share what is on your mind.
+          </p>
+        )}
+
+        <div className="flex flex-wrap justify-center gap-2">
+          {SUGGESTIONS.map((suggestion) => (
+            <button
+              key={suggestion}
+              type="button"
+                onClick={() => sendMessage(suggestion)}
+              className="rounded-full border border-border bg-card px-3.5 py-1.5 text-xs text-foreground transition-colors hover:border-primary/60 hover:bg-secondary"
+            >
+              {suggestion}
+            </button>
+          ))}
+          </div>
+        </div>
+      ) : (
+        messages.map((message) => (
+        <MessageBubble key={message.id} message={message} onFeedback={handleFeedback} />
+        ))
+        )}  
 
           {isLoading ? (
             <div className="flex justify-start gap-2.5">

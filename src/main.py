@@ -1,3 +1,5 @@
+from turtle import st
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -7,7 +9,12 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from fastapi.responses import StreamingResponse
-from src.feedback import FeedbackRequest, save_feedback
+from src.feedback import (
+    FeedbackRequest,
+    save_feedback,
+    MoodRequest,
+    save_mood,
+)
 import json
 from google import genai
 import os
@@ -241,7 +248,27 @@ async def feedback_endpoint(feedback: FeedbackRequest):
         raise HTTPException(
             status_code=500,
             detail=f"Failed to save feedback: {str(e)}"
-        )   
+        )  
+
+# Mood Tracking Endpoint
+@app.post("/mood")
+async def mood_endpoint(body: MoodRequest):
+    try:
+        save_mood(body)
+        logger.info(
+            f"Mood saved | score: {body.mood_score} | label: {body.mood_label}"
+        )
+        return {
+            "status": "saved",
+            "mood_score": body.mood_score,
+        }
+    except Exception as e:
+        logger.error(f"Mood error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="Could not save mood",
+        )
+        
 # Global Exception Handler
 
 @app.exception_handler(Exception)
