@@ -8,8 +8,9 @@ import { MessageBubble } from "@/components/message-bubble"
 import { TypingIndicator } from "@/components/typing-indicator"
 import { ChatInput } from "@/components/chat-input"
 import { MoodPicker } from "@/components/mood-picker"
+import { SessionSidebar } from "@/components/session-sidebar"
 
-const API_URL = "https://mindcare-ai-backend-4wgx.onrender.com"
+const API_URL = "http://127.0.0.1:8000"
 
 const SUGGESTIONS = [
   "I've been feeling anxious lately",
@@ -105,6 +106,25 @@ async function handleMoodSelected(score: number, label: string) {
     console.error("Mood save failed:", err)
   }
 }
+async function loadSession(targetSessionId: string) {
+  try {
+    const res = await fetch(`${API_URL}/conversation/${targetSessionId}`)
+    if (!res.ok) return
+    const data = await res.json()
+    
+    const loadedMessages = data.messages.map((m: any) => ({
+      id: createId(),
+      role: m.role,
+      content: m.content,
+      sources: [],
+      crisisDetected: false
+    }))
+    
+    setMessages(loadedMessages)
+  } catch (err) {
+    console.log("Failed to load session:", err)
+  }
+}
   async function sendMessage(text: string) {
     const trimmed = text.trim()
     if (!trimmed || isLoading) return
@@ -126,6 +146,11 @@ async function handleMoodSelected(score: number, label: string) {
     setMessages((prev) => [...prev, userMessage])
     setIsLoading(true)
 
+    let fullContent = ""
+    let sources: string[] = []
+    let crisisDetected = false
+    const botId = createId()
+
     try {
       const res = await fetch(`${API_URL}/chat/stream`, {
         method: "POST",
@@ -142,12 +167,7 @@ async function handleMoodSelected(score: number, label: string) {
 
       const reader = res.body!.getReader()
       const decoder = new TextDecoder()
-      let fullContent = ""
-      let sources: string[] = []
-      let crisisDetected = false
-      const botId = createId()
 
-      // Add empty bot message immediately
       setMessages((prev) => [
         ...prev,
         {
@@ -158,8 +178,6 @@ async function handleMoodSelected(score: number, label: string) {
           crisisDetected: false,
         },
       ])
-
-      
 
       while (true) {
         const { done, value } = await reader.read()
@@ -201,13 +219,49 @@ async function handleMoodSelected(score: number, label: string) {
                 )
               )
             }
-
           } catch {
             // skip malformed lines
           }
         }
       }
-    setIsLoading(false)
+
+      setIsLoading(false)
+
+      // Save conversation to Firestore after each exchange
+      try {
+        const updatedMessages = [
+          ...messages,
+          userMessage,
+          {
+            id: botId,
+            role: "assistant",
+            content: fullContent,
+            sources: sources,
+            crisisDetected: crisisDetected,
+          },
+        ]
+
+        const saveRes = await fetch(`${API_URL}/conversation/save`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            session_id: sessionId,
+            messages: updatedMessages.map((m) => ({
+            role: m.role,
+            content: m.content,
+            })),
+        }),
+    })
+
+    if (!saveRes.ok) {
+      throw new Error(`Conversation save failed: ${saveRes.status}`)
+      }
+  console.log("Conversation saved successfully")
+      } catch (err) {
+        console.log("Conversation save failed:", err)
+      }
 
     } catch (err) {
       console.log("[v0] chat stream failed:", err)
@@ -304,6 +358,12 @@ async function handleMoodSelected(score: number, label: string) {
         onChange={setInput}
         onSend={() => sendMessage(input)}
         disabled={isLoading}
+      />
+
+      <SessionSidebar
+        apiUrl={API_URL}
+        onSelectSession={loadSession}
+        currentSessionId={sessionId}
       />
     </div>
   )

@@ -14,6 +14,10 @@ from src.feedback import (
     save_feedback,
     MoodRequest,
     save_mood,
+    ConversationRequest,
+    save_conversation,
+    get_conversation,
+    get_recent_sessions,
 )
 import json
 from google import genai
@@ -268,7 +272,41 @@ async def mood_endpoint(body: MoodRequest):
             status_code=500,
             detail="Could not save mood",
         )
-        
+
+
+@app.post("/conversation/save")
+async def save_conversation_endpoint(request: Request, body: ConversationRequest):
+    try:
+        save_conversation(body)
+        return {"status": "saved"}
+    except Exception as e:
+        logger.error(f"Conversation save error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Could not save conversation")
+
+
+@app.get("/conversation/{session_id}")
+async def load_conversation_endpoint(session_id: str):
+    try:
+        data = get_conversation(session_id)
+        if data is None:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+        return data
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Conversation load error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Could not load conversation")
+
+
+@app.get("/conversations/recent")
+async def recent_conversations_endpoint():
+    try:
+        sessions = get_recent_sessions(limit=10)
+        return {"sessions": sessions}
+    except Exception as e:
+        logger.error(f"Recent sessions error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Could not fetch sessions")
+           
 # Global Exception Handler
 
 @app.exception_handler(Exception)
