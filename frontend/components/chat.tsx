@@ -10,7 +10,7 @@ import { ChatInput } from "@/components/chat-input"
 import { MoodPicker } from "@/components/mood-picker"
 import { SessionSidebar } from "@/components/session-sidebar"
 
-const API_URL = "http://127.0.0.1:8000"
+const API_URL = "https://mindcare-ai-backend-4wgx.onrender.com"
 
 const SUGGESTIONS = [
   "I've been feeling anxious lately",
