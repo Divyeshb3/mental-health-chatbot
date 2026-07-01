@@ -306,7 +306,67 @@ async def recent_conversations_endpoint():
     except Exception as e:
         logger.error(f"Recent sessions error: {str(e)}")
         raise HTTPException(status_code=500, detail="Could not fetch sessions")
-           
+
+@app.get("/admin/stats")
+async def admin_stats():
+    try:
+        from src.firebase_config import db
+        from datetime import datetime
+
+        # Get feedback stats
+        feedback_docs = list(db.collection("feedback").stream())
+        total_feedback = len(feedback_docs)
+        positive = sum(1 for d in feedback_docs if d.to_dict().get("rating") == "positive")
+        negative = total_feedback - positive
+
+        # Get mood stats
+        mood_docs = list(db.collection("moods").stream())
+        mood_scores = [d.to_dict().get("mood_score", 5) for d in mood_docs]
+        avg_mood = round(sum(mood_scores) / len(mood_scores), 1) if mood_scores else 0
+
+        # Mood distribution
+        mood_distribution = {}
+        for d in mood_docs:
+            label = d.to_dict().get("mood_label", "unknown")
+            mood_distribution[label] = mood_distribution.get(label, 0) + 1
+
+        # Get conversation stats
+        conv_docs = list(db.collection("conversations").stream())
+        total_conversations = len(conv_docs)
+
+        # Source citation stats
+        source_counts = {}
+        for d in feedback_docs:
+            sources = d.to_dict().get("sources", [])
+            for source in sources:
+                source_counts[source] = source_counts.get(source, 0) + 1
+
+        top_sources = sorted(source_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+
+        return {
+            "feedback": {
+                "total": total_feedback,
+                "positive": positive,
+                "negative": negative,
+                "positive_rate": round(positive / total_feedback * 100) if total_feedback > 0 else 0
+            },
+            "mood": {
+                "total_entries": len(mood_scores),
+                "average_score": avg_mood,
+                "distribution": mood_distribution
+            },
+            "conversations": {
+                "total": total_conversations
+            },
+            "top_sources": [
+                {"source": s, "count": c} for s, c in top_sources
+            ]
+        }
+
+    except Exception as e:
+        logger.error(f"Admin stats error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Could not fetch stats")   
+        
 # Global Exception Handler
 
 @app.exception_handler(Exception)
